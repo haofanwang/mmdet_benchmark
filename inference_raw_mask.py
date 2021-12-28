@@ -25,8 +25,10 @@ wrap_fp16_model(model)
 lock = Lock()
 pipeline = model.cfg.data.test.pipeline[1]
 
+target_shape = (3840, 2304)
 img = cv2.imread(image_path)
-img = cv2.resize(img, (1333, 800))
+img = cv2.resize(img, target_shape)
+model.cfg.data.test.pipeline[1].img_scale = target_shape
 logging.info(f'img_shape: {img.shape}')
 
 # warmup

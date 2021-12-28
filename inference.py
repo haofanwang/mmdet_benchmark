@@ -13,8 +13,10 @@ config_path = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
 checkpoint_path = 'https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth'
 model = init_detector(config_path, checkpoint_path, device='cuda:0')
 
+target_shape = (3840, 2304)
 img = cv2.imread(image_path)
-img = cv2.resize(img, (1333, 800))
+img = cv2.resize(img, target_shape)
+model.cfg.data.test.pipeline[1].img_scale = target_shape
 logging.info(f'img_shape: {img.shape}')
 
 # warmup
