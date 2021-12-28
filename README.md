@@ -1,6 +1,6 @@
 # mmdet_benchmark
 
-本项目是为了研究 mmdet 推断性能的瓶颈在哪里，并且对其进行优化。
+本项目是为了研究 mmdet 推断性能瓶颈，并且对其进行优化。
 
 # 配置与环境
 
@@ -47,14 +47,18 @@ MMDetection: 2.19.0+
 
 # 时间分析
 
-我们在以下几个代码块里增加了时间统计：
+Mask R-CNN 的推断过程包含以下几个步骤，我们在一些可能是瓶颈的位置增加了时间统计：
 
 * 图像预处理，pre-processing，[mmdet/apis/inference.py#L104-L150](mmdet/apis/inference.py#L104-L150)
 * ResNet50 提取特征，backbone，[mmdet/models/detectors/two_stage.py#L181-L185](mmdet/models/detectors/two_stage.py#L181-L185)
-* RPN提取候选框，rpn_head，[mmdet/models/detectors/two_stage.py#L187-L194](mmdet/models/detectors/two_stage.py#L187-L194)
-* ROI精调框以及输出 mask，roi_head，[mmdet/models/detectors/two_stage.py#L196-L201](mmdet/models/detectors/two_stage.py#L196-L201)
+* RPN 提取候选框，rpn_head，[mmdet/models/detectors/two_stage.py#L187-L194](mmdet/models/detectors/two_stage.py#L187-L194)
+* ROI 精调框以及输出 mask，roi_head，[mmdet/models/detectors/two_stage.py#L196-L201](mmdet/models/detectors/two_stage.py#L196-L201)
+    * bbox forward，时间太短未统计，5ms 以内
+    * bbox post-processing，时间太短未统计，5ms 以内
     * mask forward，[mmdet/models/roi_heads/test_mixins.py#L253-L272](mmdet/models/roi_heads/test_mixins.py#L253-L272)
     * mask post-processing，[mmdet/models/roi_heads/test_mixins.py#L275-L288](mmdet/models/roi_heads/test_mixins.py#L275-L288)
+
+注意：`mask post-processing` 的时间包含在 `roi_head` 里，所以缩小 `mask post-processing` 的时间就是在缩小 `roi_head` 的时间。
 
 ## 1333x800
 
@@ -100,7 +104,7 @@ mmdet 原版：
 
 # 总结
 
-* 使用 wrap_fp16_model 可以节省 backbone 的时间，但是不是所有情况下的 forward 都能节省时间
-* 使用 torchvision.transforms.functional 去做图像预处理，可以极大提升推断速度
-* 使用 FCNMaskHeadWithRawMask 不对 mask resize 到原图大小，对越大的图像加速比越高，同时也不会丢失信息
-* 后续优化，需要考虑backbone 和 rpn 的优化，可以使用 TensorRT 进行加速
+* 使用 `wrap_fp16_model` 可以节省 `backbone` 的时间，但是不是所有情况下的 `forward` 都能节省时间；
+* 使用 `torchvision.transforms.functional` 去做图像预处理，可以极大提升推断速度；
+* 使用 `FCNMaskHeadWithRawMask`，避免对 `mask` 进行 `resize`，对越大的图像加速比越高，因为 `resize` 到原图大小的成本很高；
+* 后续优化，需要考虑 `backbone` 和 `rpn_head` 的优化，可以使用 `TensorRT` 进行加速。
