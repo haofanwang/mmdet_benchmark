@@ -102,4 +102,5 @@ mmdet 原版：
 
 * 使用 wrap_fp16_model 可以节省 backbone 的时间，但是不是所有情况下的 forward 都能节省时间
 * 使用 torchvision.transforms.functional 去做图像预处理，可以极大提升推断速度
-* 使用 FCNMaskHeadWithRawMask 不对 mask resize 到原图大小，对越大的图像，加速比越高，同时也不会丢失信息
+* 使用 FCNMaskHeadWithRawMask 不对 mask resize 到原图大小，对越大的图像加速比越高，同时也不会丢失信息
+* 后续优化，需要考虑backbone 和 rpn 的优化，可以使用 TensorRT 进行加速
