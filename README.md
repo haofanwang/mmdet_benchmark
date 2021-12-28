@@ -55,3 +55,51 @@ MMDetection: 2.19.0+
 * ROI精调框以及输出 mask，roi_head，[mmdet/models/detectors/two_stage.py#L196-L201](mmdet/models/detectors/two_stage.py#L196-L201)
     * mask forward，[mmdet/models/roi_heads/test_mixins.py#L253-L272](mmdet/models/roi_heads/test_mixins.py#L253-L272)
     * mask post-processing，[mmdet/models/roi_heads/test_mixins.py#L275-L288](mmdet/models/roi_heads/test_mixins.py#L275-L288)
+
+## 1333x800
+
+使用标准的 1333x800 尺寸测试。
+
+测试图片：
+
+![](demo/demo.jpg)
+
+| stage                     | pre-processing | backbone | rpn_head | mask forward | mask post-processing | roi_head | total |
+|---------------------------|----------------|----------|----------|--------------|----------------------|----------|-------|
+| inference                 | 13.45          | 24.87    | 10.16    | 3.84         | 15.74                | 23.49    | 72.3  |
+| inference_fp16            | 13.53          | 15.98    | 8.34     | 3.36         | 15.74                | 22.97    | 61.4  |
+| inference_fp16_preprocess | 1.75           | 15.91    | 8.21     | 3.33         | 15.61                | 22.69    | 49.03 |
+| inference_raw_mask        | 1.65           | 15.93    | 8.34     | 3.36         | 1.74                 | 8.89     | 33.45 |
+
+![](demo/1333x800.png)
+
+## 3840x2304
+
+使用较大的尺寸进行测试：
+
+| stage                     | pre-processing | backbone | rpn_head | mask forward | mask post-processing | roi_head | total   |
+|---------------------------|----------------|----------|----------|--------------|----------------------|----------|---------|
+| inference                 | 128.44         | 187.24   | 69.96    | 6.01         | 173.72               | 183.95   | 569.92  |
+| inference_fp16            | 127.28         | 120.10   | 50.30    | 6.80         | 172.42               | 186.81   | 485.04  |
+| inference_fp16_preprocess | 11.02          | 120.20   | 50.18    | 6.82         | 174.62               | 187.07   | 379.00  |
+| inference_raw_mask        | 11.03          | 120.26   | 50.46    | 6.81         | 2.99                 | 15.34    | 197.69  |
+
+![](demo/3840x2304.png)
+
+# 可视化
+
+mmdet 原版：
+
+![](demo/mmdet.jpg)
+
+加速版：
+
+![](demo/speedup.jpg)
+
+目测没有显著差异。
+
+# 总结
+
+* 使用 wrap_fp16_model 可以节省 backbone 的时间，但是不是所有情况下的 forward 都能节省时间
+* 使用 torchvision.transforms.functional 去做图像预处理，可以极大提升推断速度
+* 使用 FCNMaskHeadWithRawMask 不对 mask resize 到原图大小，对越大的图像，加速比越高，同时也不会丢失信息
