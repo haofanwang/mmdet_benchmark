@@ -46,5 +46,5 @@ result_data = post_process_result(model, result)
 
 visualizer = Visualizer()
 vis_img = visualizer.visualize(img, result_data)
-cv2.imwrite('test_mask_float.jpg', vis_img)
+cv2.imwrite('test.jpg', vis_img)
 Image.fromarray(cv2.cvtColor(vis_img, cv2.COLOR_BGR2RGB)).show()
