@@ -45,3 +45,8 @@ MMCV CUDA Compiler: 11.1
 MMDetection: 2.19.0+
 ```
 
+# 时间分析
+
+我们在以下几个代码块里增加了时间计算：
+
+[mmdet/apis/inference.py#L104-L150](mmdet/apis/inference.py#L104-L150)
