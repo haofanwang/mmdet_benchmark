@@ -58,7 +58,7 @@ Mask R-CNN 的推断过程包含以下几个步骤，我们在一些可能是瓶
     * `mask forward`，[mmdet/models/roi_heads/test_mixins.py#L253-L272](mmdet/models/roi_heads/test_mixins.py#L253-L272)
     * `mask post-processing`，[mmdet/models/roi_heads/test_mixins.py#L275-L288](mmdet/models/roi_heads/test_mixins.py#L275-L288)
 
-注意：`mask post-processing` 的时间包含在 `roi_head` 里，所以缩小 `mask post-processing` 的时间就是在缩小 `roi_head` 的时间。
+注意：`mask post-processing` 的时间包含在 `roi_head` 里，所以减少 `mask post-processing` 的时间就是在减少 `roi_head` 的时间。
 
 ## 1333x800
 
