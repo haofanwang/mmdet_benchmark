@@ -49,14 +49,14 @@ MMDetection: 2.19.0+
 
 Mask R-CNN 的推断过程包含以下几个步骤，我们在一些可能是瓶颈的位置增加了时间统计：
 
-* 图像预处理，pre-processing，[mmdet/apis/inference.py#L104-L150](mmdet/apis/inference.py#L104-L150)
-* ResNet50 提取特征，backbone，[mmdet/models/detectors/two_stage.py#L181-L185](mmdet/models/detectors/two_stage.py#L181-L185)
-* RPN 提取候选框，rpn_head，[mmdet/models/detectors/two_stage.py#L187-L194](mmdet/models/detectors/two_stage.py#L187-L194)
-* ROI 精调框以及输出 mask，roi_head，[mmdet/models/detectors/two_stage.py#L196-L201](mmdet/models/detectors/two_stage.py#L196-L201)
-    * bbox forward，时间太短未统计，5ms 以内
-    * bbox post-processing，时间太短未统计，5ms 以内
-    * mask forward，[mmdet/models/roi_heads/test_mixins.py#L253-L272](mmdet/models/roi_heads/test_mixins.py#L253-L272)
-    * mask post-processing，[mmdet/models/roi_heads/test_mixins.py#L275-L288](mmdet/models/roi_heads/test_mixins.py#L275-L288)
+* 图像预处理，`pre-processing`，[mmdet/apis/inference.py#L104-L150](mmdet/apis/inference.py#L104-L150)
+* ResNet50 提取特征，`backbone`，[mmdet/models/detectors/two_stage.py#L181-L185](mmdet/models/detectors/two_stage.py#L181-L185)
+* RPN 提取候选框，`rpn_head`，[mmdet/models/detectors/two_stage.py#L187-L194](mmdet/models/detectors/two_stage.py#L187-L194)
+* ROI 精调框以及输出 mask，`roi_head`，[mmdet/models/detectors/two_stage.py#L196-L201](mmdet/models/detectors/two_stage.py#L196-L201)
+    * `bbox forward`，时间太短未统计，5ms 以内
+    * `bbox post-processing`，时间太短未统计，5ms 以内
+    * `mask forward`，[mmdet/models/roi_heads/test_mixins.py#L253-L272](mmdet/models/roi_heads/test_mixins.py#L253-L272)
+    * `mask post-processing`，[mmdet/models/roi_heads/test_mixins.py#L275-L288](mmdet/models/roi_heads/test_mixins.py#L275-L288)
 
 注意：`mask post-processing` 的时间包含在 `roi_head` 里，所以缩小 `mask post-processing` 的时间就是在缩小 `roi_head` 的时间。
 
