@@ -5,6 +5,7 @@ import platform
 import cv2
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
+from skimage.transform import resize
 
 
 class Visualizer:
@@ -33,7 +34,8 @@ class Visualizer:
                               random.randint(0, 255))
 
                 mask = np.array(r['mask'], dtype=np.float32)
-                mask_resize = cv2.resize(mask, (w, h))
+                # mask_resize = cv2.resize(mask, (w, h))  # mode edge is not correct, do not use opencv to resize
+                mask_resize = resize(mask, (h, w), mode='constant', cval=0)
                 mask_resize[mask_resize < 0.5] = 0
                 mask_resize[mask_resize >= 0.5] = 255
 
