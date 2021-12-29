@@ -104,3 +104,42 @@ mmdet 原版：
 * 使用 `torchvision.transforms.functional` 去做图像预处理，可以极大提升推断速度；
 * 使用 `FCNMaskHeadWithRawMask`，避免对 `mask` 进行 `resize`，对越大的图像加速比越高，因为 `resize` 到原图大小的成本很高；
 * 后续优化，需要考虑 `backbone` 和 `rpn_head` 的优化，可以使用 `TensorRT` 进行加速。
+
+# 原理分析
+
+## fp16
+
+把一些支持 fp16 的层使用 fp16 来推断，可以充分利用显卡的 TensorCore，加速 forward 部分的速度。
+
+参考链接：[https://zhuanlan.zhihu.com/p/375224982](https://zhuanlan.zhihu.com/p/375224982)
+
+在 backbone 上，时间从 24.87 降到 15.93，在大图上从 187.24 降到 120.26，提升 35% 左右。
+
+## torchvision.transforms.functional
+
+使用 pytorch 的 resize、pad、normalize，可以利用上 GPU 而不是 CPU。我们在推断过程中，CPU 利用率始终是最高的，而 GPU 利用率几乎没有满过，所以只要能够把 CPU 的事情交给 GPU 做，就能解决瓶颈问题，减少推断时间。
+
+* mmdet 的 pipeline 与 `torchvision.transforms.functional` 的桥梁：[detect/utils_torchvision.py](detect/utils_torchvision.py)
+* [torchvision.transforms.functional.resize](https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.functional.resize)
+* [torchvision.transforms.functional.pad](https://pytorch.org/vision/stable/transforms.html#torchvision.transforms.functional.pad)
+* normalize 直接使用 tensor 的减法和除法即可
+
+由于整个过程都可以使用 GPU，所以时间从 13.45 降低到 1.65，在大图上从 128.44 降低到 11.03，提升 10 倍左右。
+
+## FCNMaskHeadWithRawMask
+
+首先我们看看 mmdet 处理的结果格式：
+
+![](demo/mmdetection_segm_results.png)
+
+可以看到，有多少个 bbox，就有多少个 segm，每个 segm 都是原图尺寸。不管是 CPU，还是内存，都需要大量的时间去处理。
+
+然后再看看 FCNMaskHeadWithRawMask 处理的格式：
+
+![](demo/speedup_segm_results.png)
+
+每个结果都是 28x28 的，这也是模型原始输出，所以信息量和上面是一样的。
+
+唯一的区别是，我们在拿到结果之后，如果要可视化，需要 resize 到 bbox 的大小，参考 [detect/utils_visualize.py#L35-L38](detect/utils_visualize.py#L35-L38)
+
+使用 FCNMaskHeadWithRawMask 可以从 15.74 降到 1.74，大图可以从 173.72 降到 2.99，也就是说，图越大，这个加速比越大。
