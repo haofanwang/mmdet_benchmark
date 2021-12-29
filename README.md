@@ -140,6 +140,6 @@ mmdet 原版：
 
 每个结果都是 28x28 的，这也是模型原始输出，所以信息量和上面是一样的。
 
-唯一的区别是，我们在拿到结果之后，如果要可视化，需要 resize 到 bbox 的大小，参考 [detect/utils_visualize.py#L35-L38](detect/utils_visualize.py#L35-L38)
+唯一的区别是，我们在拿到结果之后，如果要可视化，需要 resize 到 bbox 的大小，参考 [detect/utils_visualize.py#L36-L40](detect/utils_visualize.py#L36-L40)
 
 使用 FCNMaskHeadWithRawMask 可以从 15.74 降到 1.74，大图可以从 173.72 降到 2.99，也就是说，图越大，这个加速比越大。
