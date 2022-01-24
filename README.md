@@ -2,6 +2,16 @@
 
 本项目是为了研究 mmdet 推断性能瓶颈，并且对其进行优化。
 
+2022-01-24 Update:
+
+mmdeploy 发布之后，观察了一下，发现 mmdeploy 的 Mask R-CNN 速度极慢：[https://mmdeploy.readthedocs.io/en/latest/benchmark.html](https://mmdeploy.readthedocs.io/en/latest/benchmark.html)
+
+官方速度仅为 4.14：
+
+![](demo/mmdeploy_benchmark.png)
+
+因为 Mask-RCNN 只是 Faster-RCNN 改了点 head，理论上不可能有这么大的影响，所以怀疑和 mmdetection 原因一样，本项目也会对此进行优化。
+
 # 配置与环境
 
 ## 机器配置
@@ -143,3 +153,4 @@ mmdet 原版：
 唯一的区别是，我们在拿到结果之后，如果要可视化，需要 resize 到 bbox 的大小，参考 [detect/utils_visualize.py#L36-L40](detect/utils_visualize.py#L36-L40)
 
 使用 FCNMaskHeadWithRawMask 可以从 15.74 降到 1.74，大图可以从 173.72 降到 2.99，也就是说，图越大，这个加速比越大。
+
