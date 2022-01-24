@@ -42,7 +42,12 @@ inference_time_list = []
 with torch.no_grad():
     for i in tqdm(range(20)):
         start = time.time()
+
+        a = time.time()
         model_inputs, _ = task_processor.create_input(img, input_shape)
+        b = time.time()
+        logging.debug(f'pre-processing: {(b - a) * 1000:.2f}ms')
+
         result = task_processor.run_inference(model, model_inputs)[0]
         inference_time = time.time() - start
         inference_time_list.append(inference_time)
