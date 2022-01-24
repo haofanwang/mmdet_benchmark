@@ -5,9 +5,9 @@ import cv2
 import numpy as np
 import torch
 
+from PIL import Image
 from tqdm import tqdm
 from detect.utils_model_result import post_process_result
-from detect.utils_torchvision import inference
 from detect.utils_visualize import Visualizer
 
 from mmdeploy.utils import get_backend, get_input_shape, load_config
@@ -35,6 +35,7 @@ input_shape = get_input_shape(deploy_cfg)
 
 task_processor = build_task_processor(model_cfg, deploy_cfg, device)
 model = task_processor.init_backend_model(model)
+model.cfg = model_cfg
 model_inputs, _ = task_processor.create_input(img, input_shape)
 
 # warmup
@@ -43,7 +44,7 @@ with torch.no_grad():
 
 inference_time_list = []
 with torch.no_grad():
-    for i in tqdm(range(20)):
+    for i in tqdm(range(1000)):
         start = time.time()
         result = task_processor.run_inference(model, model_inputs)[0]
         inference_time = time.time() - start
@@ -52,10 +53,9 @@ with torch.no_grad():
 logging.info(
     f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
 
-task_processor.visualize(
-    image=img,
-    model=model,
-    result=result,
-    output_file=output_path,
-    window_name=backend.value,
-    show_result=False)
+result_data = post_process_result(model, result)
+
+visualizer = Visualizer()
+vis_img = visualizer.visualize(img, result_data)
+cv2.imwrite('mmdeploy_trt_optimized.jpg', vis_img)
+Image.fromarray(cv2.cvtColor(vis_img, cv2.COLOR_BGR2RGB)).show()
