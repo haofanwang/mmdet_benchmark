@@ -190,6 +190,9 @@ class End2EndModel(BaseBackendModel):
         """
         import time
         import logging
+        from mmdeploy.utils.utils import get_root_logger
+
+        logging = get_root_logger(log_level=logging.DEBUG)
 
         a = time.time()
         input_img = img[0].contiguous()

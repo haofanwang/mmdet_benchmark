@@ -9,10 +9,9 @@ from tqdm import tqdm
 from mmdeploy.utils import get_backend, get_input_shape, load_config
 
 from mmdeploy.apis.utils import build_task_processor
+from mmdeploy.utils.utils import get_root_logger
 
-logging.basicConfig(
-    format='%(levelname)s:%(name)s:%(asctime)s %(message)s',
-    level=logging.DEBUG)
+logging = get_root_logger(log_level=logging.DEBUG)
 
 deploy_cfg = 'configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py'
 model_cfg = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
@@ -36,18 +35,18 @@ model = task_processor.init_backend_model(model)
 # warmup
 with torch.no_grad():
     model_inputs, _ = task_processor.create_input(img, input_shape)
-    logging.info(f'model_inputs: {model_inputs.shape}')
+    logging.info(f'model_inputs: {model_inputs["img"][0].shape}')
     result = task_processor.run_inference(model, model_inputs)[0]
 
 inference_time_list = []
 with torch.no_grad():
-    for i in tqdm(range(20)):
+    for i in range(20):
         start = time.time()
 
         a = time.time()
         model_inputs, _ = task_processor.create_input(img, input_shape)
         b = time.time()
-        logging.info(f'pre-processing: {(b - a) * 1000:.2f}ms')
+        logging.debug(f'pre-processing: {(b - a) * 1000:.2f}ms')
 
         result = task_processor.run_inference(model, model_inputs)[0]
         inference_time = time.time() - start
@@ -56,6 +55,8 @@ with torch.no_grad():
 
 logging.info(
     f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
+
+logging.info(f'FPS: {1 / np.mean(inference_time_list): .2f}ms')
 
 task_processor.visualize(
     image=img,
