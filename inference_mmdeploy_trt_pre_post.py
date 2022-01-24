@@ -47,7 +47,7 @@ inference(model, cfg=pipeline, img=img, lock=lock, set_device=False)
 
 inference_time_list = []
 with torch.no_grad():
-    for i in range(100):
+    for i in range(500):
         start = time.time()
         result = inference(model, cfg=pipeline, img=img, lock=lock, set_device=False)
         inference_time = time.time() - start
