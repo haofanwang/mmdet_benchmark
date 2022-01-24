@@ -14,11 +14,11 @@ logging.basicConfig(
     format='%(levelname)s:%(name)s:%(asctime)s %(message)s',
     level=logging.DEBUG)
 
-deploy_cfg = '/data/ypw/mmdeploy/configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py'
-model_cfg = '/data/ypw/mmdeploy/configs/mmdet/instance-seg/mask_rcnn_test.py'
-checkpoint_path = '/data/ypw/mmdeploy/work_dir/mask_rcnn_trt/end2end.engine'
-output_path = '/data/ypw/mmdeploy/work_dir/mask_rcnn_trt/test.jpg'
-image_path = '/data/ypw/detection/sample/5.jpg'
+deploy_cfg = 'configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py'
+model_cfg = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
+checkpoint_path = 'work_dirs/mask_rcnn_coco_trt/end2end.engine'
+image_path = 'demo/demo.jpg'
+output_path = 'demo/output_trt'
 device = 'cuda'
 
 img = cv2.imread(image_path)
@@ -28,23 +28,26 @@ backend = get_backend(deploy_cfg)
 model = [checkpoint_path]
 deploy_cfg, model_cfg = load_config(deploy_cfg, model_cfg)
 input_shape = get_input_shape(deploy_cfg)
+logging.info(f'input_shape: {input_shape}')
 
 task_processor = build_task_processor(model_cfg, deploy_cfg, device)
 model = task_processor.init_backend_model(model)
-model_inputs, _ = task_processor.create_input(img, input_shape)
 
 # warmup
 with torch.no_grad():
+    model_inputs, _ = task_processor.create_input(img, input_shape)
     result = task_processor.run_inference(model, model_inputs)[0]
 
 inference_time_list = []
 with torch.no_grad():
     for i in tqdm(range(20)):
         start = time.time()
+        model_inputs, _ = task_processor.create_input(img, input_shape)
         result = task_processor.run_inference(model, model_inputs)[0]
         inference_time = time.time() - start
         inference_time_list.append(inference_time)
         logging.info(f'Inference time: {inference_time * 1000: .2f}ms')
+
 logging.info(
     f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
 
