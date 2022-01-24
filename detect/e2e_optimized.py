@@ -1,43 +1,36 @@
-from functools import partial
-from typing import List, Sequence, Tuple, Union
+from typing import List, Sequence, Union
 
-import mmcv
 import numpy as np
 import torch
 import torch.nn.functional as F
-from mmcv.utils import Registry
 from mmdet.core import bbox2result
-from mmdet.datasets import DATASETS
-from mmdet.models import BaseDetector
-
-from mmdeploy.backend.base import get_backend_file_count
-from mmdeploy.codebase.base import BaseBackendModel
-from mmdeploy.codebase.mmdet import get_post_processing_params, multiclass_nms
-from mmdeploy.utils import (Backend, get_backend, get_codebase_config,
-                            get_partition_config, load_config)
 from mmdeploy.codebase.mmdet.deploy.object_detection_model import __BACKEND_MODEL, End2EndModel
 
 
 @__BACKEND_MODEL.register_module('end2end_optimized')
 class End2EndModelOptimized(End2EndModel):
 
+    @staticmethod
+    def clear_outputs(
+        test_outputs: List[Union[torch.Tensor, np.ndarray]]
+    ) -> List[Union[List[torch.Tensor], List[np.ndarray]]]:
+        batch_size = len(test_outputs[0])
+
+        num_outputs = len(test_outputs)
+        outputs = [[None for _ in range(batch_size)]
+                   for _ in range(num_outputs)]
+
+        for i in range(batch_size):
+            inds = test_outputs[0][i, :, 4] > 0.0
+            for output_id in range(num_outputs):
+                outputs[output_id][i] = test_outputs[output_id][i, inds, ...]
+        return outputs
+
     def forward(self, img: Sequence[torch.Tensor], img_metas: Sequence[dict],
                 *args, **kwargs):
-        """Run forward inference.
-
-        Args:
-            img (Sequence[torch.Tensor]): A list contains input image(s)
-                in [N x C x H x W] format.
-            img_metas (Sequence[dict]): A list of meta info for image(s).
-            *args: Other arguments.
-            **kwargs: Other key-pair arguments.
-
-        Returns:
-            list: A list contains predictions.
-        """
         input_img = img[0].contiguous()
         outputs = self.forward_test(input_img, img_metas, *args, **kwargs)
-        outputs = End2EndModel.__clear_outputs(outputs)
+        outputs = self.clear_outputs(outputs)
         batch_dets, batch_labels = outputs[:2]
         batch_masks = outputs[2] if len(outputs) == 3 else None
         batch_size = input_img.shape[0]
@@ -68,29 +61,6 @@ class End2EndModelOptimized(End2EndModel):
 
             if batch_masks is not None:
                 masks = batch_masks[i]
-                img_h, img_w = img_metas[i]['img_shape'][:2]
-                ori_h, ori_w = img_metas[i]['ori_shape'][:2]
-                export_postprocess_mask = True
-                if self.deploy_cfg is not None:
-                    mmdet_deploy_cfg = get_post_processing_params(
-                        self.deploy_cfg)
-                    # this flag enable postprocess when export.
-                    export_postprocess_mask = mmdet_deploy_cfg.get(
-                        'export_postprocess_mask', True)
-                if not export_postprocess_mask:
-                    masks = End2EndModel.postprocessing_masks(
-                        dets[:, :4], masks, ori_w, ori_h)
-                else:
-                    masks = masks[:, :img_h, :img_w]
-                # avoid to resize masks with zero dim
-                if rescale and masks.shape[0] != 0:
-                    masks = masks.astype(np.float32)
-                    masks = torch.from_numpy(masks)
-                    masks = torch.nn.functional.interpolate(
-                        masks.unsqueeze(0), size=(ori_h, ori_w))
-                    masks = masks.squeeze(0).detach().numpy()
-                if masks.dtype != bool:
-                    masks = masks >= 0.5
                 segms_results = [[] for _ in range(len(self.CLASSES))]
                 for j in range(len(dets)):
                     segms_results[labels[j]].append(masks[j])

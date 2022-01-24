@@ -16,5 +16,4 @@ backend_config = dict(
 codebase_config = dict(model_type='end2end_optimized')
 
 custom_imports = dict(
-    imports=['detect.e2e_optimized'],
-    allow_failed_imports=False)
+    imports=['detect.e2e_optimized'], allow_failed_imports=False)
