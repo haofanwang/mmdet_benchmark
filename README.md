@@ -154,3 +154,54 @@ mmdet 原版：
 
 使用 FCNMaskHeadWithRawMask 可以从 15.74 降到 1.74，大图可以从 173.72 降到 2.99，也就是说，图越大，这个加速比越大。
 
+# mmdeploy
+
+## 安装 mmdeploy
+
+安装文档参考：[https://mmdeploy.readthedocs.io/en/latest/build.html](https://mmdeploy.readthedocs.io/en/latest/build.html)
+
+我使用的 mmdeploy 的版本是 v0.1.0，[https://github.com/open-mmlab/mmdeploy/commit/9aabae32aaf01549f3ecc1d8fc1ab455deb42ca9](https://github.com/open-mmlab/mmdeploy/commit/9aabae32aaf01549f3ecc1d8fc1ab455deb42ca9)
+
+其他环境参考：
+
+* NVIDIA Driver 465.19.01
+* CUDA 11.1
+* cuDNN 8.2.1
+* g++ 9.3.0
+* TensorRT-7.2.3.4
+* ppl.cv@406d76554b903d111c5d4b1382871a2ec62e6d07
+
+## 模型转换
+
+首先需要对 pytorch 的模型进行转换，得到 TensorRT 的模型。
+
+转换脚本：[tools/deploy.py](tools/deploy.py)
+
+我已经将其修改为以下配置：
+
+* 测试图片：[demo/demo.jpg](demo/demo.jpg)
+* 模型配置：[`configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py`](configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py)
+* 模型权重：[https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth(https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth]
+* 部署配置：[configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py](configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py)
+
+转换完成之后，目录结构：
+
+```
+(base) ➜  work_dirs tree
+.
+└── mask_rcnn_coco_trt
+    ├── end2end.engine
+    ├── end2end.onnx
+    ├── output_pytorch.jpg
+    └── output_tensorrt.jpg
+```
+
+PyTorch 预测效果：
+
+![](demo/output_pytorch.jpg)
+
+TensorRT 预测效果：
+
+![](demo/output_tensorrt.jpg)
+
+与 PyTorch 原版几乎无差别。
