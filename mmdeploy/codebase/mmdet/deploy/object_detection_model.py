@@ -188,9 +188,17 @@ class End2EndModel(BaseBackendModel):
         Returns:
             list: A list contains predictions.
         """
+        import time
+        import logging
+
+        a = time.time()
         input_img = img[0].contiguous()
         outputs = self.forward_test(input_img, img_metas, *args, **kwargs)
         outputs = End2EndModel.__clear_outputs(outputs)
+        b = time.time()
+        logging.debug(f'forward: {(b - a) * 1000:.2f}ms')
+
+        a = time.time()
         batch_dets, batch_labels = outputs[:2]
         batch_masks = outputs[2] if len(outputs) == 3 else None
         batch_size = input_img.shape[0]
@@ -251,6 +259,8 @@ class End2EndModel(BaseBackendModel):
                 results.append((dets_results, segms_results))
             else:
                 results.append(dets_results)
+        b = time.time()
+        logging.debug(f'post-processing: {(b - a) * 1000:.2f}ms')
         return results
 
     def forward_test(self, imgs: torch.Tensor, *args, **kwargs) -> \
