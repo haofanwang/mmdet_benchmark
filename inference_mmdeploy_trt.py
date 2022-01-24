@@ -56,7 +56,7 @@ with torch.no_grad():
 logging.info(
     f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
 
-logging.info(f'FPS: {1 / np.mean(inference_time_list): .2f}ms')
+logging.info(f'FPS: {1 / np.mean(inference_time_list): .2f}')
 
 task_processor.visualize(
     image=img,
