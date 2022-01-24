@@ -44,7 +44,7 @@ with torch.no_grad():
 
 inference_time_list = []
 with torch.no_grad():
-    for i in range(20):
+    for i in range(100):
         start = time.time()
 
         a = time.time()
