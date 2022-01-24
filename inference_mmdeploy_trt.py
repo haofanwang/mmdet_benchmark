@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 import torch
 
-from tqdm import tqdm
 from mmdeploy.utils import get_backend, get_input_shape, load_config
 
 from mmdeploy.apis.utils import build_task_processor

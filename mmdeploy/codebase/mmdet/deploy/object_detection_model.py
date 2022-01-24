@@ -198,6 +198,7 @@ class End2EndModel(BaseBackendModel):
         input_img = img[0].contiguous()
         outputs = self.forward_test(input_img, img_metas, *args, **kwargs)
         outputs = End2EndModel.__clear_outputs(outputs)
+        torch.cuda.synchronize()
         b = time.time()
         logging.debug(f'forward: {(b - a) * 1000:.2f}ms')
 
