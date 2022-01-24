@@ -36,6 +36,7 @@ model = task_processor.init_backend_model(model)
 # warmup
 with torch.no_grad():
     model_inputs, _ = task_processor.create_input(img, input_shape)
+    logging.info(f'model_inputs: {model_inputs.shape}')
     result = task_processor.run_inference(model, model_inputs)[0]
 
 inference_time_list = []
@@ -46,7 +47,7 @@ with torch.no_grad():
         a = time.time()
         model_inputs, _ = task_processor.create_input(img, input_shape)
         b = time.time()
-        logging.debug(f'pre-processing: {(b - a) * 1000:.2f}ms')
+        logging.info(f'pre-processing: {(b - a) * 1000:.2f}ms')
 
         result = task_processor.run_inference(model, model_inputs)[0]
         inference_time = time.time() - start
