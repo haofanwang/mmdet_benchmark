@@ -28,9 +28,21 @@ class End2EndModelOptimized(End2EndModel):
 
     def forward(self, img: Sequence[torch.Tensor], img_metas: Sequence[dict],
                 *args, **kwargs):
+        import time
+        import logging
+        from mmdeploy.utils.utils import get_root_logger
+
+        logging = get_root_logger(log_level=logging.DEBUG)
+
+        a = time.time()
         input_img = img[0].contiguous()
         outputs = self.forward_test(input_img, img_metas, *args, **kwargs)
         outputs = self.clear_outputs(outputs)
+        torch.cuda.synchronize()
+        b = time.time()
+        logging.debug(f'forward: {(b - a) * 1000:.2f}ms')
+
+        a = time.time()
         batch_dets, batch_labels = outputs[:2]
         batch_masks = outputs[2] if len(outputs) == 3 else None
         batch_size = input_img.shape[0]
@@ -67,4 +79,6 @@ class End2EndModelOptimized(End2EndModel):
                 results.append((dets_results, segms_results))
             else:
                 results.append(dets_results)
+        b = time.time()
+        logging.debug(f'post-processing: {(b - a) * 1000:.2f}ms')
         return results
