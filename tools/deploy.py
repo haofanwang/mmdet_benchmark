@@ -20,12 +20,14 @@ from mmdeploy.utils.export_info import dump_info
 
 def parse_args():
     image_path = 'demo/demo.jpg'
-    config_path = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
+    # deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-5000.py'
+    deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-int8_dynamic-5000.py'
+    model_config_path = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
     checkpoint_path = 'https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth'
 
     parser = argparse.ArgumentParser(description='Export model to backends.')
-    parser.add_argument('-deploy_cfg', help='deploy config path', default='configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-5000.py')
-    parser.add_argument('-model_cfg', help='model config path', default=config_path)
+    parser.add_argument('-deploy_cfg', help='deploy config path', default=deploy_cfg_path)
+    parser.add_argument('-model_cfg', help='model config path', default=model_config_path)
     parser.add_argument('-checkpoint', help='model checkpoint path', default=checkpoint_path)
     parser.add_argument('-img', help='image used to convert model model', default=image_path)
     parser.add_argument('--test-img', help='image used to test model', default=image_path)
