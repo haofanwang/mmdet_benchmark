@@ -89,12 +89,13 @@ def preprocess(cfg, img):
     }
 
 
-def inference(model, cfg, img, lock):
+def inference(model, cfg, img, lock, set_device=True):
     logging.debug(f'开始预处理')
 
-    device = next(model.parameters()).device
-    if device.type == 'cuda':
-        torch.cuda.set_device(device)
+    if set_device:
+        device = next(model.parameters()).device
+        if device.type == 'cuda':
+            torch.cuda.set_device(device)
     with torch.no_grad(), lock:
         start = time.time()
         data = preprocess(cfg, img)

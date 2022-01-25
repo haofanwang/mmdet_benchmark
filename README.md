@@ -2,6 +2,16 @@
 
 本项目是为了研究 mmdet 推断性能瓶颈，并且对其进行优化。
 
+2022-01-24 Update:
+
+mmdeploy 发布之后，观察了一下，发现 mmdeploy 的 Mask R-CNN 速度极慢：[https://mmdeploy.readthedocs.io/en/latest/benchmark.html](https://mmdeploy.readthedocs.io/en/latest/benchmark.html)
+
+官方速度仅为 4.14：
+
+![](demo/mmdeploy_benchmark.png)
+
+因为 Mask-RCNN 只是 Faster-RCNN 改了点 head，理论上不可能有这么大的影响，所以怀疑和 mmdetection 原因一样，本项目也会对此进行优化。
+
 # 配置与环境
 
 ## 机器配置
@@ -143,3 +153,101 @@ mmdet 原版：
 唯一的区别是，我们在拿到结果之后，如果要可视化，需要 resize 到 bbox 的大小，参考 [detect/utils_visualize.py#L36-L40](detect/utils_visualize.py#L36-L40)
 
 使用 FCNMaskHeadWithRawMask 可以从 15.74 降到 1.74，大图可以从 173.72 降到 2.99，也就是说，图越大，这个加速比越大。
+
+# mmdeploy
+
+## 安装 mmdeploy
+
+安装文档参考：[https://mmdeploy.readthedocs.io/en/latest/build.html](https://mmdeploy.readthedocs.io/en/latest/build.html)
+
+我使用的 mmdeploy 的版本是 v0.1.0，[https://github.com/open-mmlab/mmdeploy/commit/9aabae32aaf01549f3ecc1d8fc1ab455deb42ca9](https://github.com/open-mmlab/mmdeploy/commit/9aabae32aaf01549f3ecc1d8fc1ab455deb42ca9)
+
+其他环境参考：
+
+* NVIDIA Driver 510.39.01
+* CUDA 11.1
+* cuDNN 8.2.1
+* g++ 9.3.0
+* TensorRT-8.0.3.4
+* ppl.cv@2b17d83028c3137f865ff0acbad1dd3381e13a3b
+
+## 模型转换
+
+首先需要对 pytorch 的模型进行转换，得到 TensorRT 的模型。
+
+转换脚本：[tools/deploy.py](tools/deploy.py)
+
+我已经将其修改为以下配置：
+
+* 测试图片：[demo/demo.jpg](demo/demo.jpg)
+* 模型配置：[`configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py`](configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py)
+* 模型权重：[https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth(https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth]
+* 部署配置：[configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py](configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-320x320-1344x1344.py)
+
+转换完成之后，目录结构：
+
+```
+(base) ➜  work_dirs tree
+.
+└── mask_rcnn_coco_trt
+    ├── end2end.engine
+    ├── end2end.onnx
+    ├── output_pytorch.jpg
+    └── output_tensorrt.jpg
+```
+
+PyTorch 预测效果：
+
+![](demo/output_pytorch.jpg)
+
+TensorRT 预测效果：
+
+![](demo/output_tensorrt.jpg)
+
+与 PyTorch 原版几乎无差别。
+
+## 测速
+
+### 使用标准尺寸测试（1333x800）
+
+| stage                                | pre-processing | forward | post-processing | total  |
+|--------------------------------------|----------------|---------|-----------------|--------|
+| mmdetection inference_detector       | 13.45          | 38.87   | 15.74           | 72.3   |
+| mmdetection inference_raw_mask       | 1.65           | 27.63   | 1.74            | 33.45  |
+| mmdeploy run_inference               | 13.39          | 15.21   | 140.6           | 170.03 |
+| mmdeploy post-process                | 13.49          | 13.62   | 0.28            | 27.82  |
+| mmdeploy pre-preocess + post-process | 0.94           | 13.92   | 0.27            | 15.12  |
+
+![](demo/mmdeploy_speedup.png)
+
+### 使用较大尺寸测试（3840x2304）
+
+| stage                                | pre-processing | forward | post-processing | total   |
+|--------------------------------------|----------------|---------|-----------------|---------|
+| mmdetection inference_detector       | 128.44         | 263.21  | 173.72          | 569.92  |
+| mmdetection inference_raw_mask       | 11.03          | 177.53  | 2.99            | 197.69  |
+| mmdeploy run_inference               | 137.86         | 66.02   | 7615.86         | 7821.85 |
+| mmdeploy post-process                | 204.99         | 66.03   | 0.29            | 271.65  |
+| mmdeploy pre-preocess + post-process | 8.84           | 63.38   | 0.29            | 63.8    |
+
+![](demo/mmdeploy_speedup_4k.png)
+
+### 可视化
+
+mmdeploy 原版：
+
+![](demo/output_trt.jpg)
+
+加速版：
+
+![](demo/mmdeploy_trt_pre_post.jpg)
+
+目测没有显著差异。
+
+## 总结
+
+* 使用 torchvision.transforms.functional 去做图像预处理，可以极大提升推断速度；
+* 使用 TensorRT，可以显著降低 GPU forward 的时间；
+* Mask 后处理的优化可以极大降低处理时间；
+* 在 1333x800 尺度上，仅需 15.12ms 处理一张图，相当于 66fps，比起原版 4.14fps 提升 16 倍；
+* 如果使用 INT8 量化，也许还能更快。
