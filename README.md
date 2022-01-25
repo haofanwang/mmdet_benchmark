@@ -260,11 +260,22 @@ mmdeploy 原版：
 
 抽取了 5000 张图处理好 json 之后，放在了 `data/coco/annotations/instances_val2017.json` 相对路径，因为这样可以直接使用 `instance-seg_tensorrt-int8_dynamic-5000.py` 的配置文件，直接跑 `deploy.py`。
 
+calib 5000 张图大概需要 13GB 的硬盘空间，以及一个小时的时间。
 
+目录结构：
+
+```
+(base) ➜  mask_rcnn_coco_trt git:(mmdeploy) ✗ tree
+.
+├── calib_data.h5
+├── end2end.engine
+├── end2end.onnx
+├── output_pytorch.jpg
+└── output_tensorrt.jpg
+```
 
 ## 效果
 
 ![](demo/mmdeploy_trt_pre_post_int8.jpg)
 
 目测没有显著差异。
-
