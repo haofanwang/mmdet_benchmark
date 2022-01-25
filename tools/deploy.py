@@ -20,8 +20,8 @@ from mmdeploy.utils.export_info import dump_info
 
 def parse_args():
     image_path = 'demo/demo.jpg'
-    # deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-5000.py'
-    deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-int8_dynamic-5000.py'
+    deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-fp16_dynamic-5000.py'
+    # deploy_cfg_path = 'configs/mmdet/instance-seg/instance-seg_tensorrt-int8_dynamic-5000.py'
     model_config_path = 'configs/mask_rcnn/mask_rcnn_r50_fpn_2x_coco.py'
     checkpoint_path = 'https://download.openmmlab.com/mmdetection/v2.0/mask_rcnn/mask_rcnn_r50_fpn_2x_coco/mask_rcnn_r50_fpn_2x_coco_bbox_mAP-0.392__segm_mAP-0.354_20200505_003907-3e542a40.pth'
 
