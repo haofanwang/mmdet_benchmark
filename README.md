@@ -251,3 +251,31 @@ mmdeploy 原版：
 * Mask 后处理的优化可以极大降低处理时间；
 * 在 1333x800 尺度上，仅需 15.12ms 处理一张图，相当于 66fps，比起原版 4.14fps 提升 16 倍；
 * 如果使用 INT8 量化，也许还能更快。
+
+# INT8
+
+## calib
+
+因为 INT8 表示范围有限，所以需要一些数据集去 calib，这里我在 coco2017 valid 上抽取了 5000 张图去做 calib。
+
+抽取了 5000 张图处理好 json 之后，放在了 `data/coco/annotations/instances_val2017.json` 相对路径，因为这样可以直接使用 `instance-seg_tensorrt-int8_dynamic-5000.py` 的配置文件，直接跑 `deploy.py`。
+
+calib 5000 张图大概需要 13GB 的硬盘空间，以及一个小时的时间。
+
+目录结构：
+
+```
+(base) ➜  mask_rcnn_coco_trt git:(mmdeploy) ✗ tree
+.
+├── calib_data.h5
+├── end2end.engine
+├── end2end.onnx
+├── output_pytorch.jpg
+└── output_tensorrt.jpg
+```
+
+## 效果
+
+![](demo/mmdeploy_trt_pre_post_int8.jpg)
+
+目测没有显著差异。
