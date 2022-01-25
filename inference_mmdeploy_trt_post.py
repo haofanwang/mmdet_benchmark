@@ -23,9 +23,6 @@ image_path = 'demo/demo.jpg'
 output_path = 'demo/output_trt.jpg'
 device = 'cuda'
 
-img = cv2.imread(image_path)
-logging.info(f'img_shape: {img.shape}')
-
 backend = get_backend(deploy_cfg)
 model = [checkpoint_path]
 deploy_cfg, model_cfg = load_config(deploy_cfg, model_cfg)
@@ -35,6 +32,12 @@ logging.info(f'input_shape: {input_shape}')
 task_processor = build_task_processor(model_cfg, deploy_cfg, device)
 model = task_processor.init_backend_model(model)
 model.cfg = model_cfg
+
+target_shape = (3840, 2304)
+img = cv2.imread(image_path)
+img = cv2.resize(img, target_shape)
+model.cfg.data.test.pipeline[1].img_scale = target_shape
+logging.info(f'img_shape: {img.shape}')
 
 # warmup
 with torch.no_grad():
