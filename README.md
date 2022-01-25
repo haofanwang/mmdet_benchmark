@@ -164,12 +164,12 @@ mmdet 原版：
 
 其他环境参考：
 
-* NVIDIA Driver 465.19.01
+* NVIDIA Driver 510.39.01
 * CUDA 11.1
 * cuDNN 8.2.1
 * g++ 9.3.0
-* TensorRT-7.2.3.4
-* ppl.cv@406d76554b903d111c5d4b1382871a2ec62e6d07
+* TensorRT-8.0.3.4
+* ppl.cv@2b17d83028c3137f865ff0acbad1dd3381e13a3b
 
 ## 模型转换
 
@@ -208,4 +208,46 @@ TensorRT 预测效果：
 
 ## 测速
 
-### 
+### 使用标准尺寸测试（1333x800）
+
+| stage                                | pre-processing | forward | post-processing | total  |
+|--------------------------------------|----------------|---------|-----------------|--------|
+| mmdetection inference_detector       | 13.45          | 38.87   | 15.74           | 72.3   |
+| mmdetection inference_raw_mask       | 1.65           | 27.63   | 1.74            | 33.45  |
+| mmdeploy run_inference               | 13.39          | 15.21   | 140.6           | 170.03 |
+| mmdeploy post-process                | 13.49          | 13.62   | 0.28            | 27.82  |
+| mmdeploy pre-preocess + post-process | 0.94           | 13.92   | 0.27            | 15.12  |
+
+![](demo/mmdeploy_speedup.png)
+
+### 使用较大尺寸测试（3840x2304）
+
+| stage                                | pre-processing | forward | post-processing | total   |
+|--------------------------------------|----------------|---------|-----------------|---------|
+| mmdetection inference_detector       | 128.44         | 263.21  | 173.72          | 569.92  |
+| mmdetection inference_raw_mask       | 11.03          | 177.53  | 2.99            | 197.69  |
+| mmdeploy run_inference               | 137.86         | 66.02   | 7615.86         | 7821.85 |
+| mmdeploy post-process                | 204.99         | 66.03   | 0.29            | 271.65  |
+| mmdeploy pre-preocess + post-process | 8.84           | 63.38   | 0.29            | 63.8    |
+
+![](demo/mmdeploy_speedup_4k.png)
+
+### 可视化
+
+mmdeploy 原版：
+
+![](demo/output_trt.jpg)
+
+加速版：
+
+![](demo/mmdeploy_trt_pre_post.jpg)
+
+目测没有显著差异。
+
+## 总结
+
+* 使用 torchvision.transforms.functional 去做图像预处理，可以极大提升推断速度；
+* 使用 TensorRT，可以显著降低 GPU forward 的时间；
+* Mask 后处理的优化可以极大降低处理时间；
+* 在 1333x800 尺度上，仅需 15.12ms 处理一张图，相当于 66fps，比起原版 4.14fps 提升 16 倍；
+* 如果使用 INT8 量化，也许还能更快。
