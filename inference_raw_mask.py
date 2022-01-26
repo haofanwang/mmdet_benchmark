@@ -42,7 +42,10 @@ for i in tqdm(range(20)):
     inference_time_list.append(inference_time)
     logging.info(f'Inference time: {inference_time * 1000: .2f}ms')
 
-logging.info(f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
+logging.info(
+    f'Mean Inference time: {np.mean(inference_time_list) * 1000: .2f}ms')
+
+logging.info(f'FPS: {1 / np.mean(inference_time_list): .2f}')
 
 result_data = post_process_result(model, result)
 
