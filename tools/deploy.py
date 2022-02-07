@@ -73,7 +73,7 @@ def create_process(name, target, args, kwargs, ret_value=None):
 
 def main():
     args = parse_args()
-    set_start_method('spawn')
+    set_start_method('spawn', force=True)
     logger = get_root_logger()
     logger.setLevel(args.log_level)
 
